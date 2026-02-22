@@ -1,5 +1,26 @@
-import { useState, useEffect, useRef } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar } from "recharts";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedTrack AI - Medical Coding Workflow Platform</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.8.0/Recharts.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0B0F1A; }
+    #root { min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+
+
+const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar } = Recharts;
+const { useState, useEffect, useRef } = React;
 
 // ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
 const theme = {
@@ -955,7 +976,7 @@ const SettingsPage = ({ user }) => {
 };
 
 // ─── MAIN APP ─────────────────────────────────────────────────────────────────
-export default function MedTrackAI() {
+function MedTrackAI() {
   const [user, setUser] = useState(null);
   const [page, setPage] = useState("dashboard");
   const [collapsed, setCollapsed] = useState(false);
@@ -991,3 +1012,10 @@ export default function MedTrackAI() {
     </>
   );
 }
+
+    // Mount the app
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(MedTrackAI));
+  </script>
+</body>
+</html>
