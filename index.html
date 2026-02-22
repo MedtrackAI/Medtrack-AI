@@ -201,21 +201,11 @@
     );
 
     // ---------- Login ----------
-    const handleLogin = () => {
-  setLoading(true);
-  setError("");
-
-  const correctEmail = "azhagu@medtrack.io";
-  const correctPassword = "Bharathi@09!@#";
-
-  if (email === correctEmail && password === correctPassword) {
-    onLogin();
-  } else {
-    setError("Invalid email or password");
-  }
-
-  setLoading(false);
-};
+    const LoginPage = ({ onLogin }) => {
+      const [email, setEmail] = useState("admin@medtrack.io");
+      const [password, setPassword] = useState("password");
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState("");
 
       const handleSubmit = () => {
         setError("");
