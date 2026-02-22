@@ -3,1019 +3,876 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MedTrack AI - Medical Coding Workflow Platform</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.8.0/Recharts.js"></script>
+  <title>MedTrack AI</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.8.0/umd/Recharts.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #0B0F1A; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0B0F1A; color: #F1F5F9; font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
     #root { min-height: 100vh; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #111827; }
+    ::-webkit-scrollbar-thumb { background: #1F2A3D; border-radius: 2px; }
+    input, select, textarea, button { font-family: 'DM Sans', sans-serif; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .fade-in { animation: fadeIn 0.4s ease forwards; }
+    .spinner { width: 16px; height: 16px; border: 2px solid #00C6A7; border-top: 2px solid transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
   </style>
 </head>
 <body>
-  <div id="root"></div>
-  <script type="text/babel">
+  <div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;color:#00C6A7;font-family:sans-serif;font-size:18px;">Loading MedTrack AI...</div></div>
 
+  <script type="text/babel" data-presets="react">
+    const { useState, useEffect, useRef, useCallback } = React;
+    const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+            ResponsiveContainer, AreaChart, Area, BarChart, Bar } = Recharts;
 
-const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar } = Recharts;
-const { useState, useEffect, useRef } = React;
+    // THEME
+    const T = {
+      bg: "#0B0F1A", surface: "#111827", card: "#161D2E", border: "#1F2A3D",
+      accent: "#00C6A7", accentDim: "rgba(0,198,167,0.12)", accentGlow: "rgba(0,198,167,0.3)",
+      blue: "#3B82F6", purple: "#8B5CF6", amber: "#F59E0B", red: "#EF4444",
+      text: "#F1F5F9", muted: "#64748B", subtle: "#94A3B8",
+    };
 
-// ─── DESIGN TOKENS ───────────────────────────────────────────────────────────
-const theme = {
-  bg: "#0B0F1A",
-  surface: "#111827",
-  card: "#161D2E",
-  border: "#1F2A3D",
-  accent: "#00C6A7",
-  accentDim: "rgba(0,198,167,0.12)",
-  accentGlow: "rgba(0,198,167,0.3)",
-  blue: "#3B82F6",
-  purple: "#8B5CF6",
-  amber: "#F59E0B",
-  red: "#EF4444",
-  text: "#F1F5F9",
-  muted: "#64748B",
-  subtle: "#94A3B8",
-};
+    // DATA
+    const trendData = [
+      { day:"Mon", completed:42, pending:18, target:50 },
+      { day:"Tue", completed:58, pending:12, target:50 },
+      { day:"Wed", completed:47, pending:22, target:50 },
+      { day:"Thu", completed:63, pending:9,  target:50 },
+      { day:"Fri", completed:71, pending:5,  target:50 },
+      { day:"Sat", completed:38, pending:14, target:50 },
+      { day:"Sun", completed:29, pending:8,  target:50 },
+    ];
+    const prodData = [
+      {week:"W1",rate:72},{week:"W2",rate:78},{week:"W3",rate:81},
+      {week:"W4",rate:76},{week:"W5",rate:85},{week:"W6",rate:89},
+    ];
+    const initCharts = [
+      {id:"CHT-1042",project:"Medicare Q4",coder:"Sarah M.",status:"Completed",date:"2026-02-22",priority:"High"},
+      {id:"CHT-1041",project:"Medicaid Review",coder:"James R.",status:"In Progress",date:"2026-02-22",priority:"Medium"},
+      {id:"CHT-1040",project:"Blue Cross Audit",coder:"Ana T.",status:"Pending",date:"2026-02-21",priority:"High"},
+      {id:"CHT-1039",project:"Medicare Q4",coder:"David L.",status:"Completed",date:"2026-02-21",priority:"Low"},
+      {id:"CHT-1038",project:"UHC Claims",coder:"Sarah M.",status:"In Progress",date:"2026-02-20",priority:"Medium"},
+      {id:"CHT-1037",project:"Aetna Batch",coder:"Mark W.",status:"Pending",date:"2026-02-20",priority:"High"},
+      {id:"CHT-1036",project:"Medicaid Review",coder:"James R.",status:"Completed",date:"2026-02-19",priority:"Low"},
+      {id:"CHT-1035",project:"Blue Cross Audit",coder:"Ana T.",status:"Completed",date:"2026-02-19",priority:"Medium"},
+    ];
+    const initUsers = [
+      {id:1,name:"Sarah Mitchell",email:"sarah.m@medtrack.io",role:"Coder",status:"Active",charts:142,accuracy:"96.8%"},
+      {id:2,name:"James Rivera",email:"james.r@medtrack.io",role:"Coder",status:"Active",charts:118,accuracy:"94.2%"},
+      {id:3,name:"Ana Torres",email:"ana.t@medtrack.io",role:"Coder",status:"Active",charts:97,accuracy:"98.1%"},
+      {id:4,name:"David Lee",email:"david.l@medtrack.io",role:"Admin",status:"Active",charts:0,accuracy:"—"},
+      {id:5,name:"Mark Wilson",email:"mark.w@medtrack.io",role:"Coder",status:"Inactive",charts:63,accuracy:"91.5%"},
+    ];
 
-const globalStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: ${theme.bg}; color: ${theme.text}; font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: ${theme.surface}; }
-  ::-webkit-scrollbar-thumb { background: ${theme.border}; border-radius: 2px; }
-  input, select, textarea { font-family: 'DM Sans', sans-serif; }
-  button { cursor: pointer; font-family: 'DM Sans', sans-serif; }
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-  .fade-in { animation: fadeIn 0.4s ease forwards; }
-`;
-
-// ─── MOCK DATA ─────────────────────────────────────────────────────────────
-const chartTrendData = [
-  { day: "Mon", completed: 42, pending: 18, target: 50 },
-  { day: "Tue", completed: 58, pending: 12, target: 50 },
-  { day: "Wed", completed: 47, pending: 22, target: 50 },
-  { day: "Thu", completed: 63, pending: 9,  target: 50 },
-  { day: "Fri", completed: 71, pending: 5,  target: 50 },
-  { day: "Sat", completed: 38, pending: 14, target: 50 },
-  { day: "Sun", completed: 29, pending: 8,  target: 50 },
-];
-
-const productivityData = [
-  { week: "W1", rate: 72 }, { week: "W2", rate: 78 },
-  { week: "W3", rate: 81 }, { week: "W4", rate: 76 },
-  { week: "W5", rate: 85 }, { week: "W6", rate: 89 },
-];
-
-const initialCharts = [
-  { id: "CHT-1042", project: "Medicare Q4", coder: "Sarah M.", status: "Completed", date: "2026-02-22", priority: "High" },
-  { id: "CHT-1041", project: "Medicaid Review", coder: "James R.", status: "In Progress", date: "2026-02-22", priority: "Medium" },
-  { id: "CHT-1040", project: "Blue Cross Audit", coder: "Ana T.", status: "Pending", date: "2026-02-21", priority: "High" },
-  { id: "CHT-1039", project: "Medicare Q4", coder: "David L.", status: "Completed", date: "2026-02-21", priority: "Low" },
-  { id: "CHT-1038", project: "UHC Claims", coder: "Sarah M.", status: "In Progress", date: "2026-02-20", priority: "Medium" },
-  { id: "CHT-1037", project: "Aetna Batch", coder: "Mark W.", status: "Pending", date: "2026-02-20", priority: "High" },
-  { id: "CHT-1036", project: "Medicaid Review", coder: "James R.", status: "Completed", date: "2026-02-19", priority: "Low" },
-  { id: "CHT-1035", project: "Blue Cross Audit", coder: "Ana T.", status: "Completed", date: "2026-02-19", priority: "Medium" },
-];
-
-const initialUsers = [
-  { id: 1, name: "Sarah Mitchell", email: "sarah.m@medtrack.io", role: "Coder", status: "Active", charts: 142, accuracy: "96.8%" },
-  { id: 2, name: "James Rivera", email: "james.r@medtrack.io", role: "Coder", status: "Active", charts: 118, accuracy: "94.2%" },
-  { id: 3, name: "Ana Torres", email: "ana.t@medtrack.io", role: "Coder", status: "Active", charts: 97, accuracy: "98.1%" },
-  { id: 4, name: "David Lee", email: "david.l@medtrack.io", role: "Admin", status: "Active", charts: 0, accuracy: "—" },
-  { id: 5, name: "Mark Wilson", email: "mark.w@medtrack.io", role: "Coder", status: "Inactive", charts: 63, accuracy: "91.5%" },
-];
-
-// ─── SHARED COMPONENTS ───────────────────────────────────────────────────────
-const Badge = ({ status }) => {
-  const map = {
-    Completed: { color: theme.accent, bg: "rgba(0,198,167,0.1)" },
-    "In Progress": { color: theme.blue, bg: "rgba(59,130,246,0.1)" },
-    Pending: { color: theme.amber, bg: "rgba(245,158,11,0.1)" },
-    Active: { color: theme.accent, bg: "rgba(0,198,167,0.1)" },
-    Inactive: { color: theme.muted, bg: "rgba(100,116,139,0.1)" },
-    High: { color: theme.red, bg: "rgba(239,68,68,0.1)" },
-    Medium: { color: theme.amber, bg: "rgba(245,158,11,0.1)" },
-    Low: { color: theme.accent, bg: "rgba(0,198,167,0.1)" },
-    Admin: { color: theme.purple, bg: "rgba(139,92,246,0.1)" },
-    Coder: { color: theme.blue, bg: "rgba(59,130,246,0.1)" },
-  };
-  const s = map[status] || { color: theme.muted, bg: "rgba(100,116,139,0.1)" };
-  return (
-    <span style={{
-      display: "inline-flex", alignItems: "center", gap: 5,
-      padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 600,
-      color: s.color, background: s.bg, letterSpacing: "0.02em",
-    }}>
-      <span style={{ width: 5, height: 5, borderRadius: "50%", background: s.color, flexShrink: 0 }} />
-      {status}
-    </span>
-  );
-};
-
-const Card = ({ children, style = {}, animate = true }) => (
-  <div className={animate ? "fade-in" : ""} style={{
-    background: theme.card, border: `1px solid ${theme.border}`,
-    borderRadius: 16, padding: 24, ...style,
-  }}>
-    {children}
-  </div>
-);
-
-const Input = ({ label, type = "text", value, onChange, placeholder, style = {} }) => (
-  <div style={{ display: "flex", flexDirection: "column", gap: 6, ...style }}>
-    {label && <label style={{ fontSize: 13, color: theme.subtle, fontWeight: 500 }}>{label}</label>}
-    <input
-      type={type} value={value} onChange={onChange} placeholder={placeholder}
-      style={{
-        background: theme.surface, border: `1px solid ${theme.border}`,
-        borderRadius: 10, padding: "10px 14px", color: theme.text, fontSize: 14,
-        outline: "none", transition: "border-color 0.2s",
-      }}
-      onFocus={e => e.target.style.borderColor = theme.accent}
-      onBlur={e => e.target.style.borderColor = theme.border}
-    />
-  </div>
-);
-
-const Button = ({ children, onClick, variant = "primary", size = "md", style = {}, disabled = false }) => {
-  const styles = {
-    primary: { background: theme.accent, color: "#000", border: "none" },
-    secondary: { background: "transparent", color: theme.accent, border: `1px solid ${theme.accent}` },
-    ghost: { background: "transparent", color: theme.subtle, border: `1px solid ${theme.border}` },
-    danger: { background: "rgba(239,68,68,0.1)", color: theme.red, border: `1px solid rgba(239,68,68,0.3)` },
-  };
-  const sizes = { sm: "8px 14px", md: "10px 20px", lg: "13px 28px" };
-  return (
-    <button onClick={onClick} disabled={disabled} style={{
-      ...styles[variant], padding: sizes[size], borderRadius: 10,
-      fontSize: size === "sm" ? 12 : 14, fontWeight: 600, cursor: disabled ? "not-allowed" : "pointer",
-      transition: "all 0.2s", opacity: disabled ? 0.5 : 1, display: "inline-flex", alignItems: "center", gap: 6, ...style,
-    }}
-      onMouseEnter={e => { if (!disabled) e.currentTarget.style.opacity = "0.85"; }}
-      onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
-    >
-      {children}
-    </button>
-  );
-};
-
-// ─── ICONS (SVG inline) ───────────────────────────────────────────────────────
-const Icon = ({ name, size = 18, color = "currentColor" }) => {
-  const icons = {
-    dashboard: <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
-    charts: <><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-6"/></>,
-    projects: <><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></>,
-    reports: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></>,
-    audit: <><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>,
-    users: <><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
-    settings: <><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></>,
-    logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
-    plus: <><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
-    search: <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
-    filter: <><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></>,
-    download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>,
-    bell: <><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>,
-    user: <><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
-    edit: <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
-    trash: <><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></>,
-    eye: <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>,
-    medical: <><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></>,
-    trending: <><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></>,
-    activity: <><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></>,
-    clock: <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
-  };
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      {icons[name]}
-    </svg>
-  );
-};
-
-// ─── LOGIN PAGE ───────────────────────────────────────────────────────────────
-const LoginPage = ({ onLogin }) => {
-  const [email, setEmail] = useState("admin@medtrack.io");
-  const [password, setPassword] = useState("password");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  const handleSubmit = () => {
-    setError("");
-    if (!email || !password) { setError("Please fill in all fields."); return; }
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      if (email && password.length >= 6) {
-        onLogin({ email, name: "David Lee", role: "Admin" });
-      } else {
-        setError("Invalid credentials.");
-      }
-    }, 1200);
-  };
-
-  return (
-    <div style={{
-      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-      background: theme.bg, position: "relative", overflow: "hidden",
-    }}>
-      {/* Background orbs */}
-      <div style={{ position: "absolute", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,198,167,0.08) 0%, transparent 70%)", top: -100, left: -100 }} />
-      <div style={{ position: "absolute", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 70%)", bottom: -80, right: -80 }} />
-
-      <div className="fade-in" style={{ width: "100%", maxWidth: 420, padding: 20 }}>
-        {/* Logo */}
-        <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{
-            display: "inline-flex", alignItems: "center", justifyContent: "center",
-            width: 56, height: 56, borderRadius: 16, background: theme.accentDim,
-            border: `1px solid ${theme.accentGlow}`, marginBottom: 16,
-          }}>
-            <Icon name="activity" size={28} color={theme.accent} />
-          </div>
-          <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: "-0.5px" }}>
-            Med<span style={{ color: theme.accent }}>Track</span> AI
-          </div>
-          <div style={{ color: theme.muted, fontSize: 14, marginTop: 4 }}>Medical Coding Workflow Platform</div>
-        </div>
-
-        <Card>
-          <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>Sign In</div>
-          <div style={{ color: theme.muted, fontSize: 13, marginBottom: 28 }}>Welcome back. Enter your credentials.</div>
-
-          {error && (
-            <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: theme.red, marginBottom: 20 }}>
-              {error}
-            </div>
-          )}
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <Input label="Email Address" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@medtrack.io" />
-            <Input label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
-
-            <div style={{ textAlign: "right" }}>
-              <span style={{ fontSize: 13, color: theme.accent, cursor: "pointer" }}>Forgot password?</span>
-            </div>
-
-            <button onClick={handleSubmit} disabled={loading} style={{
-              background: loading ? theme.accentDim : theme.accent, color: loading ? theme.accent : "#000",
-              border: `1px solid ${theme.accent}`, borderRadius: 10, padding: "13px", fontSize: 15, fontWeight: 700,
-              cursor: loading ? "not-allowed" : "pointer", transition: "all 0.2s", marginTop: 8,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-            }}>
-              {loading ? (
-                <>
-                  <div style={{ width: 16, height: 16, border: `2px solid ${theme.accent}`, borderTop: "2px solid transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                  Signing in...
-                </>
-              ) : "Sign In →"}
-            </button>
-          </div>
-
-          <div style={{ textAlign: "center", marginTop: 24, fontSize: 12, color: theme.muted }}>
-            Demo: any email + 6+ char password
-          </div>
-        </Card>
-
-        <div style={{ textAlign: "center", marginTop: 24, fontSize: 12, color: theme.muted }}>
-          © 2026 MedTrack AI · HIPAA Compliant Platform
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─── SIDEBAR ──────────────────────────────────────────────────────────────────
-const navItems = [
-  { id: "dashboard", label: "Dashboard", icon: "dashboard" },
-  { id: "charts", label: "Charts", icon: "charts" },
-  { id: "projects", label: "Projects", icon: "projects" },
-  { id: "reports", label: "Reports", icon: "reports" },
-  { id: "audit", label: "Audit", icon: "audit" },
-  { id: "users", label: "Users", icon: "users" },
-  { id: "settings", label: "Settings", icon: "settings" },
-];
-
-const Sidebar = ({ active, onNav, user, onLogout, collapsed }) => (
-  <div style={{
-    width: collapsed ? 70 : 240, minHeight: "100vh", background: theme.surface,
-    borderRight: `1px solid ${theme.border}`, display: "flex", flexDirection: "column",
-    transition: "width 0.3s", flexShrink: 0, position: "fixed", top: 0, left: 0, bottom: 0, zIndex: 100,
-  }}>
-    {/* Logo */}
-    <div style={{ padding: collapsed ? "20px 0" : "20px 20px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: 12, justifyContent: collapsed ? "center" : "flex-start" }}>
-      <div style={{ width: 36, height: 36, borderRadius: 10, background: theme.accentDim, border: `1px solid ${theme.accentGlow}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <Icon name="activity" size={18} color={theme.accent} />
-      </div>
-      {!collapsed && (
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.3px" }}>Med<span style={{ color: theme.accent }}>Track</span></div>
-          <div style={{ fontSize: 10, color: theme.muted, letterSpacing: "0.05em", textTransform: "uppercase" }}>AI Platform</div>
-        </div>
-      )}
-    </div>
-
-    {/* Nav */}
-    <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 4 }}>
-      {navItems.map(item => {
-        const isActive = active === item.id;
-        return (
-          <button key={item.id} onClick={() => onNav(item.id)} style={{
-            display: "flex", alignItems: "center", gap: 12, padding: collapsed ? "11px 0" : "11px 14px",
-            borderRadius: 10, border: "none", cursor: "pointer", justifyContent: collapsed ? "center" : "flex-start",
-            background: isActive ? theme.accentDim : "transparent",
-            color: isActive ? theme.accent : theme.subtle,
-            transition: "all 0.15s", fontSize: 14, fontWeight: isActive ? 600 : 400,
-            position: "relative",
-          }}
-            onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = theme.border; e.currentTarget.style.color = theme.text; } }}
-            onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = theme.subtle; } }}
-          >
-            {isActive && <div style={{ position: "absolute", left: 0, top: "20%", bottom: "20%", width: 3, borderRadius: 2, background: theme.accent }} />}
-            <Icon name={item.icon} size={18} />
-            {!collapsed && item.label}
-          </button>
-        );
-      })}
-    </nav>
-
-    {/* User */}
-    <div style={{ padding: "12px", borderTop: `1px solid ${theme.border}` }}>
-      {!collapsed && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, background: theme.border, marginBottom: 8 }}>
-          <div style={{ width: 32, height: 32, borderRadius: "50%", background: theme.accentDim, border: `1px solid ${theme.accent}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <Icon name="user" size={14} color={theme.accent} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user.name}</div>
-            <div style={{ fontSize: 11, color: theme.muted }}>{user.role}</div>
-          </div>
-        </div>
-      )}
-      <button onClick={onLogout} style={{
-        width: "100%", display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : "flex-start",
-        gap: 8, padding: collapsed ? "10px 0" : "10px 12px", borderRadius: 10, border: "none",
-        background: "transparent", color: theme.muted, cursor: "pointer", fontSize: 13,
-        transition: "all 0.15s",
-      }}
-        onMouseEnter={e => { e.currentTarget.style.color = theme.red; e.currentTarget.style.background = "rgba(239,68,68,0.08)"; }}
-        onMouseLeave={e => { e.currentTarget.style.color = theme.muted; e.currentTarget.style.background = "transparent"; }}
-      >
-        <Icon name="logout" size={16} />
-        {!collapsed && "Logout"}
-      </button>
-    </div>
-  </div>
-);
-
-// ─── TOPBAR ───────────────────────────────────────────────────────────────────
-const TopBar = ({ title, subtitle, sidebarWidth, onToggle }) => (
-  <div style={{
-    position: "fixed", top: 0, left: sidebarWidth, right: 0, height: 64,
-    background: `${theme.bg}EE`, backdropFilter: "blur(12px)",
-    borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center",
-    justifyContent: "space-between", padding: "0 24px", zIndex: 90,
-  }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-      <button onClick={onToggle} style={{ background: "none", border: "none", color: theme.muted, cursor: "pointer", padding: 6, borderRadius: 8 }}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      </button>
-      <div>
-        <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: "-0.3px" }}>{title}</div>
-        {subtitle && <div style={{ fontSize: 12, color: theme.muted }}>{subtitle}</div>}
-      </div>
-    </div>
-    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-      <div style={{
-        display: "flex", alignItems: "center", gap: 8, background: theme.surface,
-        border: `1px solid ${theme.border}`, borderRadius: 10, padding: "8px 14px",
-      }}>
-        <Icon name="search" size={15} color={theme.muted} />
-        <input placeholder="Search..." style={{ background: "none", border: "none", color: theme.text, fontSize: 13, width: 160, outline: "none" }} />
-      </div>
-      <div style={{ position: "relative", cursor: "pointer" }}>
-        <div style={{ width: 38, height: 38, borderRadius: 10, background: theme.surface, border: `1px solid ${theme.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon name="bell" size={16} color={theme.subtle} />
-        </div>
-        <div style={{ position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: "50%", background: theme.accent, border: `2px solid ${theme.bg}` }} />
-      </div>
-    </div>
-  </div>
-);
-
-// ─── STAT CARD ────────────────────────────────────────────────────────────────
-const StatCard = ({ label, value, icon, change, color = theme.accent }) => (
-  <Card>
-    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
-      <div style={{ width: 42, height: 42, borderRadius: 12, background: `${color}18`, border: `1px solid ${color}40`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Icon name={icon} size={20} color={color} />
-      </div>
-      {change && (
-        <span style={{ fontSize: 12, fontWeight: 600, color: change > 0 ? theme.accent : theme.red, background: change > 0 ? "rgba(0,198,167,0.1)" : "rgba(239,68,68,0.1)", padding: "3px 8px", borderRadius: 8 }}>
-          {change > 0 ? "+" : ""}{change}%
+    // BADGE
+    const Badge = ({status}) => {
+      const map = {
+        Completed:{c:T.accent,b:"rgba(0,198,167,0.1)"},
+        "In Progress":{c:T.blue,b:"rgba(59,130,246,0.1)"},
+        Pending:{c:T.amber,b:"rgba(245,158,11,0.1)"},
+        Active:{c:T.accent,b:"rgba(0,198,167,0.1)"},
+        Inactive:{c:T.muted,b:"rgba(100,116,139,0.1)"},
+        High:{c:T.red,b:"rgba(239,68,68,0.1)"},
+        Medium:{c:T.amber,b:"rgba(245,158,11,0.1)"},
+        Low:{c:T.accent,b:"rgba(0,198,167,0.1)"},
+        Admin:{c:T.purple,b:"rgba(139,92,246,0.1)"},
+        Coder:{c:T.blue,b:"rgba(59,130,246,0.1)"},
+      };
+      const s = map[status] || {c:T.muted,b:"rgba(100,116,139,0.1)"};
+      return (
+        <span style={{display:"inline-flex",alignItems:"center",gap:5,padding:"3px 10px",borderRadius:20,fontSize:12,fontWeight:600,color:s.c,background:s.b}}>
+          <span style={{width:5,height:5,borderRadius:"50%",background:s.c,flexShrink:0}} />
+          {status}
         </span>
-      )}
-    </div>
-    <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-1px", fontFamily: "'JetBrains Mono', monospace", color: theme.text }}>{value}</div>
-    <div style={{ fontSize: 13, color: theme.muted, marginTop: 4 }}>{label}</div>
-  </Card>
-);
+      );
+    };
 
-// ─── DASHBOARD PAGE ───────────────────────────────────────────────────────────
-const DashboardPage = () => (
-  <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-      <StatCard label="Total Charts Today" value="348" icon="charts" change={12} color={theme.accent} />
-      <StatCard label="Productivity Rate" value="87%" icon="trending" change={3} color={theme.blue} />
-      <StatCard label="Active Coders" value="12" icon="users" change={0} color={theme.purple} />
-      <StatCard label="Pending Charts" value="64" icon="clock" change={-8} color={theme.amber} />
-    </div>
-
-    <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
-      <Card>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 700 }}>Chart Completion Trend</div>
-            <div style={{ fontSize: 12, color: theme.muted, marginTop: 2 }}>Past 7 days · Daily breakdown</div>
-          </div>
-          <div style={{ display: "flex", gap: 16, fontSize: 12 }}>
-            {[{ c: theme.accent, l: "Completed" }, { c: theme.amber, l: "Pending" }, { c: theme.border, l: "Target" }].map(i => (
-              <div key={i.l} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <div style={{ width: 10, height: 3, borderRadius: 2, background: i.c }} />
-                <span style={{ color: theme.muted }}>{i.l}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <ResponsiveContainer width="100%" height={220}>
-          <AreaChart data={chartTrendData}>
-            <defs>
-              <linearGradient id="grad1" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={theme.accent} stopOpacity={0.2} />
-                <stop offset="95%" stopColor={theme.accent} stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="grad2" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={theme.amber} stopOpacity={0.15} />
-                <stop offset="95%" stopColor={theme.amber} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke={theme.border} vertical={false} />
-            <XAxis dataKey="day" tick={{ fill: theme.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: theme.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={{ background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 10, fontSize: 13 }} labelStyle={{ color: theme.text }} />
-            <Area type="monotone" dataKey="completed" stroke={theme.accent} fill="url(#grad1)" strokeWidth={2.5} dot={false} />
-            <Area type="monotone" dataKey="pending" stroke={theme.amber} fill="url(#grad2)" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="target" stroke={theme.border} strokeWidth={1.5} strokeDasharray="5 5" dot={false} />
-          </AreaChart>
-        </ResponsiveContainer>
-      </Card>
-
-      <Card>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Productivity Trend</div>
-        <div style={{ fontSize: 12, color: theme.muted, marginBottom: 20 }}>Weekly average rate</div>
-        <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={productivityData} barSize={28}>
-            <CartesianGrid strokeDasharray="3 3" stroke={theme.border} vertical={false} />
-            <XAxis dataKey="week" tick={{ fill: theme.muted, fontSize: 12 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: theme.muted, fontSize: 12 }} axisLine={false} tickLine={false} domain={[60, 100]} />
-            <Tooltip contentStyle={{ background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 10, fontSize: 13 }} />
-            <Bar dataKey="rate" fill={theme.blue} radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-
-        <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${theme.border}` }}>
-          {[
-            { label: "Top Coder", value: "Ana Torres", sub: "98.1% accuracy" },
-            { label: "Busiest Project", value: "Medicare Q4", sub: "142 charts" },
-          ].map(r => (
-            <div key={r.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0" }}>
-              <div style={{ fontSize: 12, color: theme.muted }}>{r.label}</div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{r.value}</div>
-                <div style={{ fontSize: 11, color: theme.muted }}>{r.sub}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-    </div>
-
-    <Card>
-      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Recent Activity</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-        {[
-          { time: "2m ago", text: "CHT-1042 completed by Sarah M.", type: "success" },
-          { time: "8m ago", text: "CHT-1041 assigned to James R.", type: "info" },
-          { time: "23m ago", text: "New chart batch uploaded — Medicare Q4 (24 charts)", type: "warning" },
-          { time: "1h ago", text: "Audit flag raised on CHT-1035", type: "error" },
-          { time: "2h ago", text: "Mark Wilson set to inactive by Admin", type: "info" },
-        ].map((a, i) => {
-          const colors = { success: theme.accent, info: theme.blue, warning: theme.amber, error: theme.red };
-          return (
-            <div key={i} style={{ display: "flex", gap: 14, padding: "12px 0", borderBottom: i < 4 ? `1px solid ${theme.border}` : "none" }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: colors[a.type], marginTop: 5, flexShrink: 0 }} />
-              <div style={{ flex: 1, fontSize: 13 }}>{a.text}</div>
-              <div style={{ fontSize: 12, color: theme.muted, flexShrink: 0 }}>{a.time}</div>
-            </div>
-          );
-        })}
+    // CARD
+    const Card = ({children, style={}, anim=true}) => (
+      <div className={anim?"fade-in":""} style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:16,padding:24,...style}}>
+        {children}
       </div>
-    </Card>
-  </div>
-);
+    );
 
-// ─── CHARTS PAGE ──────────────────────────────────────────────────────────────
-const ChartsPage = () => {
-  const [charts, setCharts] = useState(initialCharts);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [showModal, setShowModal] = useState(false);
-  const [newChart, setNewChart] = useState({ project: "", coder: "", priority: "Medium" });
+    // INPUT
+    const Input = ({label,type="text",value,onChange,placeholder,style={}}) => (
+      <div style={{display:"flex",flexDirection:"column",gap:6,...style}}>
+        {label && <label style={{fontSize:13,color:T.subtle,fontWeight:500}}>{label}</label>}
+        <input type={type} value={value} onChange={onChange} placeholder={placeholder}
+          style={{background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 14px",color:T.text,fontSize:14,outline:"none"}}
+          onFocus={e=>e.target.style.borderColor=T.accent}
+          onBlur={e=>e.target.style.borderColor=T.border}
+        />
+      </div>
+    );
 
-  const filtered = charts.filter(c =>
-    (statusFilter === "All" || c.status === statusFilter) &&
-    (c.id.toLowerCase().includes(search.toLowerCase()) || c.project.toLowerCase().includes(search.toLowerCase()) || c.coder.toLowerCase().includes(search.toLowerCase()))
-  );
+    // BUTTON
+    const Btn = ({children,onClick,variant="primary",size="md",style={},disabled=false}) => {
+      const vs = {
+        primary:{background:T.accent,color:"#000",border:"none"},
+        secondary:{background:"transparent",color:T.accent,border:`1px solid ${T.accent}`},
+        ghost:{background:"transparent",color:T.subtle,border:`1px solid ${T.border}`},
+        danger:{background:"rgba(239,68,68,0.1)",color:T.red,border:`1px solid rgba(239,68,68,0.3)`},
+      };
+      const ps = {sm:"7px 13px",md:"10px 20px",lg:"13px 28px"};
+      return (
+        <button onClick={onClick} disabled={disabled}
+          style={{...vs[variant],padding:ps[size],borderRadius:10,fontSize:size==="sm"?12:14,fontWeight:600,
+            cursor:disabled?"not-allowed":"pointer",transition:"all 0.2s",opacity:disabled?0.5:1,
+            display:"inline-flex",alignItems:"center",gap:6,...style}}
+          onMouseEnter={e=>{if(!disabled)e.currentTarget.style.opacity="0.8";}}
+          onMouseLeave={e=>{e.currentTarget.style.opacity="1";}}
+        >{children}</button>
+      );
+    };
 
-  const addChart = () => {
-    if (!newChart.project || !newChart.coder) return;
-    const id = `CHT-${1043 + charts.length}`;
-    setCharts([{ id, project: newChart.project, coder: newChart.coder, status: "Pending", date: new Date().toISOString().slice(0, 10), priority: newChart.priority }, ...charts]);
-    setNewChart({ project: "", coder: "", priority: "Medium" });
-    setShowModal(false);
-  };
+    // ICON
+    const Ico = ({n,size=18,color="currentColor"}) => {
+      const d = {
+        dashboard:<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
+        charts:<><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 4-6"/></>,
+        projects:<><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></>,
+        reports:<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></>,
+        audit:<><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>,
+        users:<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
+        settings:<><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></>,
+        logout:<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,
+        plus:<><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></>,
+        search:<><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>,
+        download:<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>,
+        bell:<><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></>,
+        user:<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>,
+        edit:<><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></>,
+        trash:<><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></>,
+        eye:<><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>,
+        trending:<><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></>,
+        activity:<><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></>,
+        clock:<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>,
+        menu:<><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>,
+      };
+      return (
+        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          {d[n]}
+        </svg>
+      );
+    };
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <Card>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 10, padding: "9px 14px" }}>
-              <Icon name="search" size={14} color={theme.muted} />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search charts..." style={{ background: "none", border: "none", color: theme.text, fontSize: 13, width: 180, outline: "none" }} />
+    // ── LOGIN ──────────────────────────────────────────────────────────────────
+    const LoginPage = ({onLogin}) => {
+      const [email, setEmail] = useState("admin@medtrack.io");
+      const [pass, setPass] = useState("password");
+      const [loading, setLoading] = useState(false);
+      const [err, setErr] = useState("");
+
+      const submit = () => {
+        setErr("");
+        if (!email || !pass) { setErr("Please fill all fields."); return; }
+        setLoading(true);
+        setTimeout(() => {
+          setLoading(false);
+          if (pass.length >= 6) onLogin({email, name:"David Lee", role:"Admin"});
+          else setErr("Password must be 6+ characters.");
+        }, 1000);
+      };
+
+      return (
+        <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:T.bg,position:"relative",overflow:"hidden"}}>
+          <div style={{position:"absolute",width:500,height:500,borderRadius:"50%",background:"radial-gradient(circle,rgba(0,198,167,0.07) 0%,transparent 70%)",top:-100,left:-100}} />
+          <div style={{position:"absolute",width:400,height:400,borderRadius:"50%",background:"radial-gradient(circle,rgba(59,130,246,0.05) 0%,transparent 70%)",bottom:-80,right:-80}} />
+          <div className="fade-in" style={{width:"100%",maxWidth:420,padding:20}}>
+            <div style={{textAlign:"center",marginBottom:36}}>
+              <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:56,height:56,borderRadius:16,background:T.accentDim,border:`1px solid ${T.accentGlow}`,marginBottom:14}}>
+                <Ico n="activity" size={28} color={T.accent} />
+              </div>
+              <div style={{fontSize:28,fontWeight:700,letterSpacing:"-0.5px"}}>Med<span style={{color:T.accent}}>Track</span> AI</div>
+              <div style={{color:T.muted,fontSize:13,marginTop:4}}>Medical Coding Workflow Platform</div>
             </div>
-            {["All", "Completed", "In Progress", "Pending"].map(s => (
-              <button key={s} onClick={() => setStatusFilter(s)} style={{
-                padding: "9px 16px", borderRadius: 10, border: "none", cursor: "pointer", fontSize: 13, fontWeight: 500,
-                background: statusFilter === s ? theme.accentDim : theme.surface,
-                color: statusFilter === s ? theme.accent : theme.muted,
-                border: `1px solid ${statusFilter === s ? theme.accent : theme.border}`,
-              }}>{s}</button>
-            ))}
+            <Card>
+              <div style={{fontSize:20,fontWeight:700,marginBottom:4}}>Sign In</div>
+              <div style={{color:T.muted,fontSize:13,marginBottom:24}}>Welcome back. Enter your credentials.</div>
+              {err && <div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:10,padding:"10px 14px",fontSize:13,color:T.red,marginBottom:16}}>{err}</div>}
+              <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                <Input label="Email Address" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@medtrack.io" />
+                <Input label="Password" type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" />
+                <div style={{textAlign:"right"}}><span style={{fontSize:13,color:T.accent,cursor:"pointer"}}>Forgot password?</span></div>
+                <button onClick={submit} disabled={loading}
+                  style={{background:loading?T.accentDim:T.accent,color:loading?T.accent:"#000",border:`1px solid ${T.accent}`,borderRadius:10,padding:"13px",fontSize:15,fontWeight:700,cursor:loading?"not-allowed":"pointer",transition:"all 0.2s",marginTop:4,display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+                  {loading ? <><div className="spinner" />Signing in...</> : "Sign In →"}
+                </button>
+              </div>
+              <div style={{textAlign:"center",marginTop:20,fontSize:12,color:T.muted}}>Demo: any email + 6+ char password</div>
+            </Card>
+            <div style={{textAlign:"center",marginTop:20,fontSize:12,color:T.muted}}>© 2026 MedTrack AI · HIPAA Compliant</div>
           </div>
-          <Button onClick={() => setShowModal(true)}>
-            <Icon name="plus" size={15} color="#000" /> Add Chart
-          </Button>
         </div>
-      </Card>
+      );
+    };
 
-      <Card animate={false}>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-            <thead>
-              <tr>
-                {["Chart ID", "Project", "Coder", "Priority", "Status", "Date", "Actions"].map(h => (
-                  <th key={h} style={{ padding: "10px 16px", textAlign: "left", color: theme.muted, fontSize: 12, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase", borderBottom: `1px solid ${theme.border}`, whiteSpace: "nowrap" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((c, i) => (
-                <tr key={c.id} style={{ borderBottom: i < filtered.length - 1 ? `1px solid ${theme.border}` : "none" }}
-                  onMouseEnter={e => e.currentTarget.style.background = `${theme.border}40`}
-                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
-                >
-                  <td style={{ padding: "14px 16px", fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: theme.accent }}>{c.id}</td>
-                  <td style={{ padding: "14px 16px", fontWeight: 500 }}>{c.project}</td>
-                  <td style={{ padding: "14px 16px", color: theme.subtle }}>{c.coder}</td>
-                  <td style={{ padding: "14px 16px" }}><Badge status={c.priority} /></td>
-                  <td style={{ padding: "14px 16px" }}><Badge status={c.status} /></td>
-                  <td style={{ padding: "14px 16px", color: theme.muted, fontSize: 13 }}>{c.date}</td>
-                  <td style={{ padding: "14px 16px" }}>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button style={{ padding: "6px", borderRadius: 8, border: "none", background: theme.surface, color: theme.muted, cursor: "pointer" }}><Icon name="eye" size={14} /></button>
-                      <button style={{ padding: "6px", borderRadius: 8, border: "none", background: theme.surface, color: theme.muted, cursor: "pointer" }}><Icon name="edit" size={14} /></button>
-                      <button onClick={() => setCharts(charts.filter(x => x.id !== c.id))} style={{ padding: "6px", borderRadius: 8, border: "none", background: "rgba(239,68,68,0.08)", color: theme.red, cursor: "pointer" }}><Icon name="trash" size={14} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filtered.length === 0 && (
-            <div style={{ textAlign: "center", padding: "40px", color: theme.muted }}>No charts found.</div>
+    // ── SIDEBAR ────────────────────────────────────────────────────────────────
+    const navItems = [
+      {id:"dashboard",label:"Dashboard",icon:"dashboard"},
+      {id:"charts",label:"Charts",icon:"charts"},
+      {id:"projects",label:"Projects",icon:"projects"},
+      {id:"reports",label:"Reports",icon:"reports"},
+      {id:"audit",label:"Audit",icon:"audit"},
+      {id:"users",label:"Users",icon:"users"},
+      {id:"settings",label:"Settings",icon:"settings"},
+    ];
+
+    const Sidebar = ({active,onNav,user,onLogout,collapsed}) => (
+      <div style={{width:collapsed?70:240,minHeight:"100vh",background:T.surface,borderRight:`1px solid ${T.border}`,display:"flex",flexDirection:"column",transition:"width 0.3s",flexShrink:0,position:"fixed",top:0,left:0,bottom:0,zIndex:100,overflow:"hidden"}}>
+        <div style={{padding:collapsed?"18px 0":"18px 18px",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",gap:10,justifyContent:collapsed?"center":"flex-start"}}>
+          <div style={{width:36,height:36,borderRadius:10,background:T.accentDim,border:`1px solid ${T.accentGlow}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+            <Ico n="activity" size={18} color={T.accent} />
+          </div>
+          {!collapsed && (
+            <div>
+              <div style={{fontSize:16,fontWeight:700}}>Med<span style={{color:T.accent}}>Track</span></div>
+              <div style={{fontSize:10,color:T.muted,letterSpacing:"0.05em",textTransform:"uppercase"}}>AI Platform</div>
+            </div>
           )}
         </div>
-        <div style={{ marginTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, color: theme.muted }}>
-          <span>Showing {filtered.length} of {charts.length} charts</span>
-          <div style={{ display: "flex", gap: 6 }}>
-            {[1, 2, 3].map(p => (
-              <button key={p} style={{ width: 32, height: 32, borderRadius: 8, border: `1px solid ${p === 1 ? theme.accent : theme.border}`, background: p === 1 ? theme.accentDim : "transparent", color: p === 1 ? theme.accent : theme.muted, cursor: "pointer", fontSize: 13, fontWeight: p === 1 ? 600 : 400 }}>{p}</button>
-            ))}
-          </div>
-        </div>
-      </Card>
-
-      {/* Add Chart Modal */}
-      {showModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }} onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}>
-          <div className="fade-in" style={{ background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 20, padding: 32, width: 420 }}>
-            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Add New Chart</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <Input label="Project Name" value={newChart.project} onChange={e => setNewChart({ ...newChart, project: e.target.value })} placeholder="e.g. Medicare Q4" />
-              <Input label="Assigned Coder" value={newChart.coder} onChange={e => setNewChart({ ...newChart, coder: e.target.value })} placeholder="e.g. Sarah M." />
-              <div>
-                <label style={{ fontSize: 13, color: theme.subtle, fontWeight: 500, display: "block", marginBottom: 6 }}>Priority</label>
-                <select value={newChart.priority} onChange={e => setNewChart({ ...newChart, priority: e.target.value })} style={{ width: "100%", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 10, padding: "10px 14px", color: theme.text, fontSize: 14, outline: "none" }}>
-                  {["High", "Medium", "Low"].map(p => <option key={p}>{p}</option>)}
-                </select>
-              </div>
-              <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-                <Button onClick={() => setShowModal(false)} variant="ghost" style={{ flex: 1, justifyContent: "center" }}>Cancel</Button>
-                <Button onClick={addChart} style={{ flex: 1, justifyContent: "center" }}>Add Chart</Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ─── PROJECTS PAGE ────────────────────────────────────────────────────────────
-const ProjectsPage = () => {
-  const projects = [
-    { name: "Medicare Q4", charts: 142, completed: 118, coders: 3, deadline: "Mar 15, 2026", status: "On Track" },
-    { name: "Medicaid Review", charts: 89, completed: 54, coders: 2, deadline: "Feb 28, 2026", status: "At Risk" },
-    { name: "Blue Cross Audit", charts: 64, completed: 40, coders: 2, deadline: "Mar 5, 2026", status: "On Track" },
-    { name: "UHC Claims", charts: 51, completed: 22, coders: 1, deadline: "Mar 20, 2026", status: "Delayed" },
-    { name: "Aetna Batch", charts: 38, completed: 0, coders: 1, deadline: "Apr 1, 2026", status: "On Track" },
-  ];
-  const statusColor = { "On Track": theme.accent, "At Risk": theme.amber, "Delayed": theme.red };
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <Button><Icon name="plus" size={15} color="#000" /> New Project</Button>
-      </div>
-      {projects.map((p, i) => {
-        const pct = Math.round((p.completed / p.charts) * 100);
-        return (
-          <Card key={p.name} style={{ animationDelay: `${i * 0.06}s` }}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700 }}>{p.name}</div>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: statusColor[p.status], background: `${statusColor[p.status]}15`, padding: "2px 10px", borderRadius: 20 }}>{p.status}</span>
-                </div>
-                <div style={{ fontSize: 13, color: theme.muted, marginBottom: 16 }}>Deadline: {p.deadline} · {p.coders} coder{p.coders > 1 ? "s" : ""} assigned</div>
-                <div style={{ height: 6, borderRadius: 3, background: theme.border, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: `${pct}%`, borderRadius: 3, background: statusColor[p.status], transition: "width 0.6s ease" }} />
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 12, color: theme.muted }}>
-                  <span>{p.completed} / {p.charts} charts completed</span>
-                  <span style={{ fontWeight: 600, color: statusColor[p.status] }}>{pct}%</span>
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <Button variant="secondary" size="sm">View</Button>
-                <Button variant="ghost" size="sm">Edit</Button>
-              </div>
-            </div>
-          </Card>
-        );
-      })}
-    </div>
-  );
-};
-
-// ─── REPORTS PAGE ─────────────────────────────────────────────────────────────
-const ReportsPage = () => {
-  const [dateFrom, setDateFrom] = useState("2026-02-01");
-  const [dateTo, setDateTo] = useState("2026-02-22");
-  const [project, setProject] = useState("All");
-  const [coder, setCoder] = useState("All");
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <Card>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Report Filters</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14 }}>
-          <Input label="Date From" type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} />
-          <Input label="Date To" type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} />
-          <div>
-            <label style={{ fontSize: 13, color: theme.subtle, fontWeight: 500, display: "block", marginBottom: 6 }}>Project</label>
-            <select value={project} onChange={e => setProject(e.target.value)} style={{ width: "100%", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 10, padding: "10px 14px", color: theme.text, fontSize: 14, outline: "none" }}>
-              {["All", "Medicare Q4", "Medicaid Review", "Blue Cross Audit", "UHC Claims"].map(p => <option key={p}>{p}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={{ fontSize: 13, color: theme.subtle, fontWeight: 500, display: "block", marginBottom: 6 }}>Coder</label>
-            <select value={coder} onChange={e => setCoder(e.target.value)} style={{ width: "100%", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 10, padding: "10px 14px", color: theme.text, fontSize: 14, outline: "none" }}>
-              {["All", "Sarah M.", "James R.", "Ana T.", "David L.", "Mark W."].map(c => <option key={c}>{c}</option>)}
-            </select>
-          </div>
-        </div>
-        <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-          <Button>Generate Report</Button>
-          <Button variant="secondary"><Icon name="download" size={14} color={theme.accent} /> Export CSV</Button>
-          <Button variant="ghost"><Icon name="download" size={14} color={theme.subtle} /> Export PDF</Button>
-        </div>
-      </Card>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-        {[
-          { label: "Total Charts Coded", value: "384", sub: "Feb 1 – 22, 2026", color: theme.accent },
-          { label: "Avg. Charts / Day", value: "17.5", sub: "All coders", color: theme.blue },
-          { label: "Overall Accuracy", value: "95.4%", sub: "QA reviewed", color: theme.purple },
-        ].map(s => (
-          <Card key={s.label}>
-            <div style={{ fontSize: 28, fontWeight: 700, color: s.color, fontFamily: "'JetBrains Mono', monospace" }}>{s.value}</div>
-            <div style={{ fontSize: 14, fontWeight: 600, marginTop: 8 }}>{s.label}</div>
-            <div style={{ fontSize: 12, color: theme.muted, marginTop: 2 }}>{s.sub}</div>
-          </Card>
-        ))}
-      </div>
-
-      <Card animate={false}>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Coder Performance Report</div>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-          <thead>
-            <tr>
-              {["Coder", "Charts Completed", "Pending", "Avg. Turnaround", "Accuracy", "Productivity"].map(h => (
-                <th key={h} style={{ padding: "10px 16px", textAlign: "left", color: theme.muted, fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: `1px solid ${theme.border}` }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              { coder: "Sarah M.", done: 142, pend: 8, turn: "2.1 days", acc: "96.8%", prod: 94 },
-              { coder: "James R.", done: 118, pend: 12, turn: "2.4 days", acc: "94.2%", prod: 88 },
-              { coder: "Ana T.", done: 97, pend: 3, turn: "1.8 days", acc: "98.1%", prod: 97 },
-              { coder: "Mark W.", done: 63, pend: 21, turn: "3.1 days", acc: "91.5%", prod: 72 },
-            ].map((r, i) => (
-              <tr key={r.coder} style={{ borderBottom: `1px solid ${theme.border}` }}
-                onMouseEnter={e => e.currentTarget.style.background = `${theme.border}40`}
-                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+        <nav style={{flex:1,padding:"14px 10px",display:"flex",flexDirection:"column",gap:3}}>
+          {navItems.map(item => {
+            const active2 = active === item.id;
+            return (
+              <button key={item.id} onClick={()=>onNav(item.id)}
+                style={{display:"flex",alignItems:"center",gap:12,padding:collapsed?"10px 0":"10px 12px",borderRadius:10,border:"none",cursor:"pointer",justifyContent:collapsed?"center":"flex-start",background:active2?T.accentDim:"transparent",color:active2?T.accent:T.subtle,transition:"all 0.15s",fontSize:14,fontWeight:active2?600:400,position:"relative",width:"100%"}}
+                onMouseEnter={e=>{if(!active2){e.currentTarget.style.background=T.border;e.currentTarget.style.color=T.text;}}}
+                onMouseLeave={e=>{if(!active2){e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.subtle;}}}
               >
-                <td style={{ padding: "14px 16px", fontWeight: 600 }}>{r.coder}</td>
-                <td style={{ padding: "14px 16px", color: theme.accent, fontWeight: 600 }}>{r.done}</td>
-                <td style={{ padding: "14px 16px", color: theme.amber }}>{r.pend}</td>
-                <td style={{ padding: "14px 16px", color: theme.muted }}>{r.turn}</td>
-                <td style={{ padding: "14px 16px", color: r.acc > "95%" ? theme.accent : theme.subtle }}>{r.acc}</td>
-                <td style={{ padding: "14px 16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ flex: 1, height: 6, borderRadius: 3, background: theme.border }}>
-                      <div style={{ height: "100%", width: `${r.prod}%`, borderRadius: 3, background: r.prod > 90 ? theme.accent : r.prod > 80 ? theme.blue : theme.amber }} />
-                    </div>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: theme.subtle, width: 35 }}>{r.prod}%</span>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
-    </div>
-  );
-};
-
-// ─── AUDIT PAGE ───────────────────────────────────────────────────────────────
-const AuditPage = () => (
-  <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-      {[
-        { label: "Flagged Charts", value: "12", icon: "audit", color: theme.red },
-        { label: "Under Review", value: "5", icon: "eye", color: theme.amber },
-        { label: "Cleared", value: "47", icon: "audit", color: theme.accent },
-      ].map(s => <StatCard key={s.label} {...s} />)}
-    </div>
-
-    <Card animate={false}>
-      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Audit Log</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-        {[
-          { id: "CHT-1035", reason: "Incorrect DX code (M79.3 vs M79.31)", severity: "High", coder: "Ana T.", reviewer: "David L.", date: "Feb 19" },
-          { id: "CHT-1028", reason: "Missing modifier on CPT 99213", severity: "Medium", coder: "James R.", reviewer: "David L.", date: "Feb 17" },
-          { id: "CHT-1021", reason: "Duplicate billing entry detected", severity: "High", coder: "Mark W.", reviewer: "David L.", date: "Feb 15" },
-          { id: "CHT-1014", reason: "ICD-10 specificity insufficient", severity: "Low", coder: "Sarah M.", reviewer: "David L.", date: "Feb 12" },
-        ].map((a, i) => {
-          const sev = { High: { c: theme.red, b: "rgba(239,68,68,0.1)" }, Medium: { c: theme.amber, b: "rgba(245,158,11,0.1)" }, Low: { c: theme.accent, b: "rgba(0,198,167,0.1)" } };
-          return (
-            <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 16, padding: "16px 0", borderBottom: i < 3 ? `1px solid ${theme.border}` : "none", flexWrap: "wrap" }}>
-              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: theme.accent, width: 80, flexShrink: 0 }}>{a.id}</div>
-              <div style={{ flex: 1, minWidth: 200 }}>
-                <div style={{ fontSize: 14, fontWeight: 500 }}>{a.reason}</div>
-                <div style={{ fontSize: 12, color: theme.muted, marginTop: 3 }}>Coder: {a.coder} · Reviewer: {a.reviewer}</div>
+                {active2 && <div style={{position:"absolute",left:0,top:"20%",bottom:"20%",width:3,borderRadius:2,background:T.accent}} />}
+                <Ico n={item.icon} size={17} />
+                {!collapsed && item.label}
+              </button>
+            );
+          })}
+        </nav>
+        <div style={{padding:"10px",borderTop:`1px solid ${T.border}`}}>
+          {!collapsed && (
+            <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 10px",borderRadius:10,background:T.border,marginBottom:8}}>
+              <div style={{width:30,height:30,borderRadius:"50%",background:T.accentDim,border:`1px solid ${T.accent}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <Ico n="user" size={13} color={T.accent} />
               </div>
-              <span style={{ padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600, color: sev[a.severity].c, background: sev[a.severity].b }}>{a.severity}</span>
-              <div style={{ fontSize: 12, color: theme.muted, width: 60, textAlign: "right" }}>{a.date}</div>
-              <div style={{ display: "flex", gap: 6 }}>
-                <Button variant="secondary" size="sm">Review</Button>
-                <Button variant="ghost" size="sm">Clear</Button>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user.name}</div>
+                <div style={{fontSize:11,color:T.muted}}>{user.role}</div>
               </div>
             </div>
-          );
-        })}
+          )}
+          <button onClick={onLogout}
+            style={{width:"100%",display:"flex",alignItems:"center",justifyContent:collapsed?"center":"flex-start",gap:8,padding:collapsed?"10px 0":"10px 10px",borderRadius:10,border:"none",background:"transparent",color:T.muted,cursor:"pointer",fontSize:13,transition:"all 0.15s"}}
+            onMouseEnter={e=>{e.currentTarget.style.color=T.red;e.currentTarget.style.background="rgba(239,68,68,0.08)";}}
+            onMouseLeave={e=>{e.currentTarget.style.color=T.muted;e.currentTarget.style.background="transparent";}}
+          >
+            <Ico n="logout" size={16} />
+            {!collapsed && "Logout"}
+          </button>
+        </div>
       </div>
-    </Card>
-  </div>
-);
+    );
 
-// ─── USERS PAGE ───────────────────────────────────────────────────────────────
-const UsersPage = () => {
-  const [users, setUsers] = useState(initialUsers);
-  const [showModal, setShowModal] = useState(false);
-  const [newUser, setNewUser] = useState({ name: "", email: "", role: "Coder" });
-
-  const addUser = () => {
-    if (!newUser.name || !newUser.email) return;
-    setUsers([...users, { id: Date.now(), ...newUser, status: "Active", charts: 0, accuracy: "—" }]);
-    setNewUser({ name: "", email: "", role: "Coder" });
-    setShowModal(false);
-  };
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <Button onClick={() => setShowModal(true)}><Icon name="plus" size={15} color="#000" /> Add User</Button>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-        {users.map((u, i) => (
-          <Card key={u.id} style={{ animationDelay: `${i * 0.05}s` }}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 14, background: theme.accentDim, border: `1px solid ${theme.accentGlow}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: theme.accent }}>
-                  {u.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
-                </div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 15 }}>{u.name}</div>
-                  <div style={{ fontSize: 12, color: theme.muted }}>{u.email}</div>
-                </div>
-              </div>
-              <Badge status={u.status} />
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderTop: `1px solid ${theme.border}`, borderBottom: `1px solid ${theme.border}`, marginBottom: 14 }}>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>{u.charts}</div>
-                <div style={{ fontSize: 11, color: theme.muted }}>Charts</div>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>{u.accuracy}</div>
-                <div style={{ fontSize: 11, color: theme.muted }}>Accuracy</div>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <Badge status={u.role} />
-                <div style={{ fontSize: 11, color: theme.muted, marginTop: 4 }}>Role</div>
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <Button variant="secondary" size="sm" style={{ flex: 1, justifyContent: "center" }}>Edit</Button>
-              <Button variant="danger" size="sm" style={{ flex: 1, justifyContent: "center" }} onClick={() => setUsers(users.filter(x => x.id !== u.id))}>Remove</Button>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {showModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200 }} onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}>
-          <div className="fade-in" style={{ background: theme.card, border: `1px solid ${theme.border}`, borderRadius: 20, padding: 32, width: 400 }}>
-            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Add New User</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <Input label="Full Name" value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })} placeholder="Jane Doe" />
-              <Input label="Email" type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} placeholder="jane@medtrack.io" />
-              <div>
-                <label style={{ fontSize: 13, color: theme.subtle, fontWeight: 500, display: "block", marginBottom: 6 }}>Role</label>
-                <select value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value })} style={{ width: "100%", background: theme.surface, border: `1px solid ${theme.border}`, borderRadius: 10, padding: "10px 14px", color: theme.text, fontSize: 14, outline: "none" }}>
-                  <option>Admin</option><option>Coder</option>
-                </select>
-              </div>
-              <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-                <Button onClick={() => setShowModal(false)} variant="ghost" style={{ flex: 1, justifyContent: "center" }}>Cancel</Button>
-                <Button onClick={addUser} style={{ flex: 1, justifyContent: "center" }}>Add User</Button>
-              </div>
-            </div>
+    // ── TOPBAR ─────────────────────────────────────────────────────────────────
+    const TopBar = ({title,subtitle,sw,onToggle}) => (
+      <div style={{position:"fixed",top:0,left:sw,right:0,height:64,background:T.bg+"EE",backdropFilter:"blur(12px)",borderBottom:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 24px",zIndex:90,transition:"left 0.3s"}}>
+        <div style={{display:"flex",alignItems:"center",gap:14}}>
+          <button onClick={onToggle} style={{background:"none",border:"none",color:T.muted,cursor:"pointer",padding:6,borderRadius:8}}>
+            <Ico n="menu" size={18} />
+          </button>
+          <div>
+            <div style={{fontSize:18,fontWeight:700,letterSpacing:"-0.3px"}}>{title}</div>
+            {subtitle && <div style={{fontSize:12,color:T.muted}}>{subtitle}</div>}
           </div>
         </div>
-      )}
-    </div>
-  );
-};
-
-// ─── SETTINGS PAGE ────────────────────────────────────────────────────────────
-const SettingsPage = ({ user }) => {
-  const [company, setCompany] = useState({ name: "MedTrack Health Systems", email: "admin@medtrack.io", phone: "+1 (555) 012-3456", address: "123 Healthcare Blvd, Boston, MA 02101", npi: "1234567890" });
-  const [passwords, setPasswords] = useState({ current: "", newPass: "", confirm: "" });
-  const [saved, setSaved] = useState(false);
-
-  const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2500); };
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 700 }}>
-      <Card>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Company Information</div>
-        <div style={{ fontSize: 13, color: theme.muted, marginBottom: 24 }}>Update your organization's details and contact information.</div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-          <Input label="Company Name" value={company.name} onChange={e => setCompany({ ...company, name: e.target.value })} style={{ gridColumn: "1 / -1" }} />
-          <Input label="Admin Email" value={company.email} onChange={e => setCompany({ ...company, email: e.target.value })} />
-          <Input label="Phone Number" value={company.phone} onChange={e => setCompany({ ...company, phone: e.target.value })} />
-          <Input label="NPI Number" value={company.npi} onChange={e => setCompany({ ...company, npi: e.target.value })} />
-          <Input label="Address" value={company.address} onChange={e => setCompany({ ...company, address: e.target.value })} />
-        </div>
-        <div style={{ marginTop: 20, display: "flex", gap: 10, alignItems: "center" }}>
-          <Button onClick={save}>Save Changes</Button>
-          {saved && <span style={{ fontSize: 13, color: theme.accent }}>✓ Changes saved successfully</span>}
-        </div>
-      </Card>
-
-      <Card>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Change Password</div>
-        <div style={{ fontSize: 13, color: theme.muted, marginBottom: 24 }}>Ensure your account is secured with a strong password.</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <Input label="Current Password" type="password" value={passwords.current} onChange={e => setPasswords({ ...passwords, current: e.target.value })} placeholder="••••••••" />
-          <Input label="New Password" type="password" value={passwords.newPass} onChange={e => setPasswords({ ...passwords, newPass: e.target.value })} placeholder="••••••••" />
-          <Input label="Confirm New Password" type="password" value={passwords.confirm} onChange={e => setPasswords({ ...passwords, confirm: e.target.value })} placeholder="••••••••" />
-          {passwords.newPass && passwords.confirm && passwords.newPass !== passwords.confirm && (
-            <div style={{ fontSize: 12, color: theme.red }}>Passwords do not match.</div>
-          )}
-          <div><Button onClick={save}>Update Password</Button></div>
-        </div>
-      </Card>
-
-      <Card>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Notifications & Preferences</div>
-        {[
-          { label: "Email alerts for flagged charts", sub: "Receive email when a chart is flagged in audit" },
-          { label: "Daily summary report", sub: "Get a daily digest of coding activity" },
-          { label: "Coder productivity alerts", sub: "Alert when productivity drops below threshold" },
-        ].map((n, i) => {
-          const [on, setOn] = useState(i < 2);
-          return (
-            <div key={n.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 0", borderBottom: i < 2 ? `1px solid ${theme.border}` : "none" }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 500 }}>{n.label}</div>
-                <div style={{ fontSize: 12, color: theme.muted, marginTop: 2 }}>{n.sub}</div>
-              </div>
-              <div onClick={() => setOn(!on)} style={{ width: 44, height: 24, borderRadius: 12, background: on ? theme.accent : theme.border, cursor: "pointer", position: "relative", transition: "background 0.2s", flexShrink: 0 }}>
-                <div style={{ position: "absolute", top: 3, left: on ? "calc(100% - 21px)" : 3, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left 0.2s" }} />
-              </div>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 12px"}}>
+            <Ico n="search" size={14} color={T.muted} />
+            <input placeholder="Search..." style={{background:"none",border:"none",color:T.text,fontSize:13,width:140,outline:"none"}} />
+          </div>
+          <div style={{position:"relative",cursor:"pointer"}}>
+            <div style={{width:38,height:38,borderRadius:10,background:T.surface,border:`1px solid ${T.border}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <Ico n="bell" size={16} color={T.subtle} />
             </div>
-          );
-        })}
-      </Card>
-    </div>
-  );
-};
-
-// ─── MAIN APP ─────────────────────────────────────────────────────────────────
-function MedTrackAI() {
-  const [user, setUser] = useState(null);
-  const [page, setPage] = useState("dashboard");
-  const [collapsed, setCollapsed] = useState(false);
-
-  const sidebarWidth = collapsed ? 70 : 240;
-
-  const pageMeta = {
-    dashboard: { title: "Dashboard", subtitle: "Welcome back, David" },
-    charts: { title: "Charts", subtitle: "Manage and track medical coding charts" },
-    projects: { title: "Projects", subtitle: "All active coding projects" },
-    reports: { title: "Reports", subtitle: "Analytics and performance reporting" },
-    audit: { title: "Audit", subtitle: "Quality assurance and compliance" },
-    users: { title: "User Management", subtitle: "Manage coders and administrators" },
-    settings: { title: "Settings", subtitle: "Company and account configuration" },
-  };
-
-  const PageComponent = { dashboard: DashboardPage, charts: ChartsPage, projects: ProjectsPage, reports: ReportsPage, audit: AuditPage, users: UsersPage, settings: SettingsPage }[page];
-
-  if (!user) return <LoginPage onLogin={setUser} />;
-
-  return (
-    <>
-      <style>{globalStyles}</style>
-      <div style={{ display: "flex", minHeight: "100vh" }}>
-        <Sidebar active={page} onNav={setPage} user={user} onLogout={() => setUser(null)} collapsed={collapsed} />
-        <div style={{ flex: 1, marginLeft: sidebarWidth, transition: "margin-left 0.3s", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-          <TopBar title={pageMeta[page].title} subtitle={pageMeta[page].subtitle} sidebarWidth={sidebarWidth} onToggle={() => setCollapsed(!collapsed)} />
-          <main style={{ flex: 1, padding: "88px 24px 32px", maxWidth: 1400, width: "100%" }}>
-            <PageComponent user={user} />
-          </main>
+            <div style={{position:"absolute",top:8,right:8,width:6,height:6,borderRadius:"50%",background:T.accent,border:`2px solid ${T.bg}`}} />
+          </div>
         </div>
       </div>
-    </>
-  );
-}
+    );
 
-    // Mount the app
+    // ── STAT CARD ──────────────────────────────────────────────────────────────
+    const StatCard = ({label,value,icon,change,color=T.accent}) => (
+      <Card>
+        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:14}}>
+          <div style={{width:42,height:42,borderRadius:12,background:color+"20",border:`1px solid ${color}40`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <Ico n={icon} size={20} color={color} />
+          </div>
+          {change !== undefined && (
+            <span style={{fontSize:12,fontWeight:600,color:change>0?T.accent:change<0?T.red:T.muted,background:change>0?"rgba(0,198,167,0.1)":change<0?"rgba(239,68,68,0.1)":"rgba(100,116,139,0.1)",padding:"3px 8px",borderRadius:8}}>
+              {change>0?"+":""}{change}%
+            </span>
+          )}
+        </div>
+        <div style={{fontSize:30,fontWeight:700,letterSpacing:"-1px",fontFamily:"'JetBrains Mono',monospace"}}>{value}</div>
+        <div style={{fontSize:13,color:T.muted,marginTop:4}}>{label}</div>
+      </Card>
+    );
+
+    // ── DASHBOARD ──────────────────────────────────────────────────────────────
+    const Dashboard = () => (
+      <div style={{display:"flex",flexDirection:"column",gap:20}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16}}>
+          <StatCard label="Total Charts Today" value="348" icon="charts" change={12} color={T.accent} />
+          <StatCard label="Productivity Rate" value="87%" icon="trending" change={3} color={T.blue} />
+          <StatCard label="Active Coders" value="12" icon="users" change={0} color={T.purple} />
+          <StatCard label="Pending Charts" value="64" icon="clock" change={-8} color={T.amber} />
+        </div>
+
+        <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:16}}>
+          <Card>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20}}>
+              <div>
+                <div style={{fontSize:16,fontWeight:700}}>Chart Completion Trend</div>
+                <div style={{fontSize:12,color:T.muted,marginTop:2}}>Past 7 days</div>
+              </div>
+              <div style={{display:"flex",gap:14,fontSize:12}}>
+                {[{c:T.accent,l:"Completed"},{c:T.amber,l:"Pending"}].map(i=>(
+                  <div key={i.l} style={{display:"flex",alignItems:"center",gap:5}}>
+                    <div style={{width:10,height:3,borderRadius:2,background:i.c}} />
+                    <span style={{color:T.muted}}>{i.l}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={210}>
+              <AreaChart data={trendData}>
+                <defs>
+                  <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={T.accent} stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor={T.accent} stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={T.amber} stopOpacity={0.15}/>
+                    <stop offset="95%" stopColor={T.amber} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
+                <XAxis dataKey="day" tick={{fill:T.muted,fontSize:12}} axisLine={false} tickLine={false} />
+                <YAxis tick={{fill:T.muted,fontSize:12}} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,fontSize:13}} />
+                <Area type="monotone" dataKey="completed" stroke={T.accent} fill="url(#g1)" strokeWidth={2.5} dot={false} />
+                <Area type="monotone" dataKey="pending" stroke={T.amber} fill="url(#g2)" strokeWidth={2} dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </Card>
+
+          <Card>
+            <div style={{fontSize:16,fontWeight:700,marginBottom:4}}>Weekly Productivity</div>
+            <div style={{fontSize:12,color:T.muted,marginBottom:16}}>Average rate %</div>
+            <ResponsiveContainer width="100%" height={170}>
+              <BarChart data={prodData} barSize={26}>
+                <CartesianGrid strokeDasharray="3 3" stroke={T.border} vertical={false} />
+                <XAxis dataKey="week" tick={{fill:T.muted,fontSize:12}} axisLine={false} tickLine={false} />
+                <YAxis tick={{fill:T.muted,fontSize:12}} axisLine={false} tickLine={false} domain={[60,100]} />
+                <Tooltip contentStyle={{background:T.card,border:`1px solid ${T.border}`,borderRadius:10,fontSize:13}} />
+                <Bar dataKey="rate" fill={T.blue} radius={[6,6,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
+            <div style={{marginTop:16,paddingTop:14,borderTop:`1px solid ${T.border}`}}>
+              {[{l:"Top Coder",v:"Ana Torres",s:"98.1% accuracy"},{l:"Busiest Project",v:"Medicare Q4",s:"142 charts"}].map(r=>(
+                <div key={r.l} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0"}}>
+                  <div style={{fontSize:12,color:T.muted}}>{r.l}</div>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontSize:13,fontWeight:600}}>{r.v}</div>
+                    <div style={{fontSize:11,color:T.muted}}>{r.s}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        <Card anim={false}>
+          <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Recent Activity</div>
+          {[
+            {time:"2m ago",text:"CHT-1042 completed by Sarah M.",type:"success"},
+            {time:"8m ago",text:"CHT-1041 assigned to James R.",type:"info"},
+            {time:"23m ago",text:"New batch uploaded — Medicare Q4 (24 charts)",type:"warning"},
+            {time:"1h ago",text:"Audit flag raised on CHT-1035",type:"error"},
+            {time:"2h ago",text:"Mark Wilson set to inactive by Admin",type:"info"},
+          ].map((a,i)=>{
+            const colors={success:T.accent,info:T.blue,warning:T.amber,error:T.red};
+            return (
+              <div key={i} style={{display:"flex",gap:14,padding:"11px 0",borderBottom:i<4?`1px solid ${T.border}`:"none"}}>
+                <div style={{width:7,height:7,borderRadius:"50%",background:colors[a.type],marginTop:5,flexShrink:0}} />
+                <div style={{flex:1,fontSize:13}}>{a.text}</div>
+                <div style={{fontSize:12,color:T.muted,flexShrink:0}}>{a.time}</div>
+              </div>
+            );
+          })}
+        </Card>
+      </div>
+    );
+
+    // ── CHARTS PAGE ────────────────────────────────────────────────────────────
+    const ChartsPage = () => {
+      const [charts, setCharts] = useState(initCharts);
+      const [search, setSearch] = useState("");
+      const [filter, setFilter] = useState("All");
+      const [modal, setModal] = useState(false);
+      const [nc, setNc] = useState({project:"",coder:"",priority:"Medium"});
+
+      const filtered = charts.filter(c =>
+        (filter==="All"||c.status===filter) &&
+        (c.id.toLowerCase().includes(search.toLowerCase())||
+         c.project.toLowerCase().includes(search.toLowerCase())||
+         c.coder.toLowerCase().includes(search.toLowerCase()))
+      );
+
+      const addChart = () => {
+        if(!nc.project||!nc.coder) return;
+        const id = "CHT-"+(1043+charts.length);
+        setCharts([{id,project:nc.project,coder:nc.coder,status:"Pending",date:new Date().toISOString().slice(0,10),priority:nc.priority},...charts]);
+        setNc({project:"",coder:"",priority:"Medium"});
+        setModal(false);
+      };
+
+      return (
+        <div style={{display:"flex",flexDirection:"column",gap:16}}>
+          <Card>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:10}}>
+              <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"8px 12px"}}>
+                  <Ico n="search" size={14} color={T.muted} />
+                  <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search charts..." style={{background:"none",border:"none",color:T.text,fontSize:13,width:170,outline:"none"}} />
+                </div>
+                {["All","Completed","In Progress","Pending"].map(s=>(
+                  <button key={s} onClick={()=>setFilter(s)}
+                    style={{padding:"8px 14px",borderRadius:10,border:`1px solid ${filter===s?T.accent:T.border}`,cursor:"pointer",fontSize:13,fontWeight:500,background:filter===s?T.accentDim:T.surface,color:filter===s?T.accent:T.muted}}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+              <Btn onClick={()=>setModal(true)}>
+                <Ico n="plus" size={15} color="#000" /> Add Chart
+              </Btn>
+            </div>
+          </Card>
+
+          <Card anim={false}>
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
+                <thead>
+                  <tr>
+                    {["Chart ID","Project","Coder","Priority","Status","Date","Actions"].map(h=>(
+                      <th key={h} style={{padding:"10px 14px",textAlign:"left",color:T.muted,fontSize:11,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",borderBottom:`1px solid ${T.border}`,whiteSpace:"nowrap"}}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((c,i)=>(
+                    <tr key={c.id}
+                      onMouseEnter={e=>e.currentTarget.style.background=T.border+"40"}
+                      onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                    >
+                      <td style={{padding:"13px 14px",fontFamily:"'JetBrains Mono',monospace",fontSize:13,color:T.accent}}>{c.id}</td>
+                      <td style={{padding:"13px 14px",fontWeight:500}}>{c.project}</td>
+                      <td style={{padding:"13px 14px",color:T.subtle}}>{c.coder}</td>
+                      <td style={{padding:"13px 14px"}}><Badge status={c.priority} /></td>
+                      <td style={{padding:"13px 14px"}}><Badge status={c.status} /></td>
+                      <td style={{padding:"13px 14px",color:T.muted,fontSize:13}}>{c.date}</td>
+                      <td style={{padding:"13px 14px"}}>
+                        <div style={{display:"flex",gap:5}}>
+                          <button style={{padding:"6px",borderRadius:8,border:"none",background:T.surface,color:T.muted,cursor:"pointer"}}><Ico n="eye" size={13} /></button>
+                          <button style={{padding:"6px",borderRadius:8,border:"none",background:T.surface,color:T.muted,cursor:"pointer"}}><Ico n="edit" size={13} /></button>
+                          <button onClick={()=>setCharts(charts.filter(x=>x.id!==c.id))} style={{padding:"6px",borderRadius:8,border:"none",background:"rgba(239,68,68,0.08)",color:T.red,cursor:"pointer"}}><Ico n="trash" size={13} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {filtered.length===0 && <div style={{textAlign:"center",padding:"36px",color:T.muted}}>No charts found.</div>}
+            </div>
+            <div style={{marginTop:14,display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:13,color:T.muted}}>
+              <span>Showing {filtered.length} of {charts.length} charts</span>
+              <div style={{display:"flex",gap:5}}>
+                {[1,2,3].map(p=>(
+                  <button key={p} style={{width:30,height:30,borderRadius:8,border:`1px solid ${p===1?T.accent:T.border}`,background:p===1?T.accentDim:"transparent",color:p===1?T.accent:T.muted,cursor:"pointer",fontSize:13,fontWeight:p===1?600:400}}>{p}</button>
+                ))}
+              </div>
+            </div>
+          </Card>
+
+          {modal && (
+            <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)setModal(false);}}>
+              <div className="fade-in" style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:20,padding:28,width:400}}>
+                <div style={{fontSize:18,fontWeight:700,marginBottom:18}}>Add New Chart</div>
+                <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  <Input label="Project Name" value={nc.project} onChange={e=>setNc({...nc,project:e.target.value})} placeholder="e.g. Medicare Q4" />
+                  <Input label="Assigned Coder" value={nc.coder} onChange={e=>setNc({...nc,coder:e.target.value})} placeholder="e.g. Sarah M." />
+                  <div>
+                    <label style={{fontSize:13,color:T.subtle,fontWeight:500,display:"block",marginBottom:6}}>Priority</label>
+                    <select value={nc.priority} onChange={e=>setNc({...nc,priority:e.target.value})} style={{width:"100%",background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 14px",color:T.text,fontSize:14,outline:"none"}}>
+                      <option>High</option><option>Medium</option><option>Low</option>
+                    </select>
+                  </div>
+                  <div style={{display:"flex",gap:8,marginTop:6}}>
+                    <Btn onClick={()=>setModal(false)} variant="ghost" style={{flex:1,justifyContent:"center"}}>Cancel</Btn>
+                    <Btn onClick={addChart} style={{flex:1,justifyContent:"center"}}>Add Chart</Btn>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // ── PROJECTS ───────────────────────────────────────────────────────────────
+    const ProjectsPage = () => {
+      const projects = [
+        {name:"Medicare Q4",charts:142,completed:118,coders:3,deadline:"Mar 15, 2026",status:"On Track"},
+        {name:"Medicaid Review",charts:89,completed:54,coders:2,deadline:"Feb 28, 2026",status:"At Risk"},
+        {name:"Blue Cross Audit",charts:64,completed:40,coders:2,deadline:"Mar 5, 2026",status:"On Track"},
+        {name:"UHC Claims",charts:51,completed:22,coders:1,deadline:"Mar 20, 2026",status:"Delayed"},
+        {name:"Aetna Batch",charts:38,completed:0,coders:1,deadline:"Apr 1, 2026",status:"On Track"},
+      ];
+      const sc = {"On Track":T.accent,"At Risk":T.amber,"Delayed":T.red};
+      return (
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <div style={{display:"flex",justifyContent:"flex-end"}}>
+            <Btn><Ico n="plus" size={15} color="#000" /> New Project</Btn>
+          </div>
+          {projects.map((p,i)=>{
+            const pct = Math.round((p.completed/p.charts)*100);
+            return (
+              <Card key={p.name} style={{animationDelay:`${i*0.05}s`}}>
+                <div style={{display:"flex",alignItems:"flex-start",gap:16,flexWrap:"wrap"}}>
+                  <div style={{flex:1,minWidth:200}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:5}}>
+                      <div style={{fontSize:16,fontWeight:700}}>{p.name}</div>
+                      <span style={{fontSize:12,fontWeight:600,color:sc[p.status],background:sc[p.status]+"20",padding:"2px 10px",borderRadius:20}}>{p.status}</span>
+                    </div>
+                    <div style={{fontSize:13,color:T.muted,marginBottom:14}}>Deadline: {p.deadline} · {p.coders} coder{p.coders>1?"s":""} assigned</div>
+                    <div style={{height:6,borderRadius:3,background:T.border,overflow:"hidden"}}>
+                      <div style={{height:"100%",width:`${pct}%`,borderRadius:3,background:sc[p.status],transition:"width 0.6s ease"}} />
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",marginTop:7,fontSize:12,color:T.muted}}>
+                      <span>{p.completed} / {p.charts} charts</span>
+                      <span style={{fontWeight:600,color:sc[p.status]}}>{pct}%</span>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:8}}>
+                    <Btn variant="secondary" size="sm">View</Btn>
+                    <Btn variant="ghost" size="sm">Edit</Btn>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      );
+    };
+
+    // ── REPORTS ────────────────────────────────────────────────────────────────
+    const ReportsPage = () => {
+      const [dateFrom, setDateFrom] = useState("2026-02-01");
+      const [dateTo, setDateTo] = useState("2026-02-22");
+      const [project, setProject] = useState("All");
+      const [coder, setCoder] = useState("All");
+      return (
+        <div style={{display:"flex",flexDirection:"column",gap:18}}>
+          <Card>
+            <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Report Filters</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:12}}>
+              <Input label="Date From" type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} />
+              <Input label="Date To" type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} />
+              <div>
+                <label style={{fontSize:13,color:T.subtle,fontWeight:500,display:"block",marginBottom:6}}>Project</label>
+                <select value={project} onChange={e=>setProject(e.target.value)} style={{width:"100%",background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 14px",color:T.text,fontSize:14,outline:"none"}}>
+                  {["All","Medicare Q4","Medicaid Review","Blue Cross Audit","UHC Claims"].map(p=><option key={p}>{p}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{fontSize:13,color:T.subtle,fontWeight:500,display:"block",marginBottom:6}}>Coder</label>
+                <select value={coder} onChange={e=>setCoder(e.target.value)} style={{width:"100%",background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 14px",color:T.text,fontSize:14,outline:"none"}}>
+                  {["All","Sarah M.","James R.","Ana T.","David L.","Mark W."].map(c=><option key={c}>{c}</option>)}
+                </select>
+              </div>
+            </div>
+            <div style={{display:"flex",gap:8,marginTop:14}}>
+              <Btn>Generate Report</Btn>
+              <Btn variant="secondary"><Ico n="download" size={14} color={T.accent} /> Export CSV</Btn>
+              <Btn variant="ghost"><Ico n="download" size={14} color={T.subtle} /> Export PDF</Btn>
+            </div>
+          </Card>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+            {[{l:"Total Charts Coded",v:"384",s:"Feb 1–22, 2026",c:T.accent},{l:"Avg. Charts / Day",v:"17.5",s:"All coders",c:T.blue},{l:"Overall Accuracy",v:"95.4%",s:"QA reviewed",c:T.purple}].map(s=>(
+              <Card key={s.l}>
+                <div style={{fontSize:28,fontWeight:700,color:s.c,fontFamily:"'JetBrains Mono',monospace"}}>{s.v}</div>
+                <div style={{fontSize:14,fontWeight:600,marginTop:8}}>{s.l}</div>
+                <div style={{fontSize:12,color:T.muted,marginTop:2}}>{s.s}</div>
+              </Card>
+            ))}
+          </div>
+          <Card anim={false}>
+            <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Coder Performance</div>
+            <table style={{width:"100%",borderCollapse:"collapse",fontSize:14}}>
+              <thead>
+                <tr>
+                  {["Coder","Completed","Pending","Turnaround","Accuracy","Productivity"].map(h=>(
+                    <th key={h} style={{padding:"10px 14px",textAlign:"left",color:T.muted,fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.05em",borderBottom:`1px solid ${T.border}`}}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  {coder:"Sarah M.",done:142,pend:8,turn:"2.1 days",acc:"96.8%",prod:94},
+                  {coder:"James R.",done:118,pend:12,turn:"2.4 days",acc:"94.2%",prod:88},
+                  {coder:"Ana T.",done:97,pend:3,turn:"1.8 days",acc:"98.1%",prod:97},
+                  {coder:"Mark W.",done:63,pend:21,turn:"3.1 days",acc:"91.5%",prod:72},
+                ].map(r=>(
+                  <tr key={r.coder}
+                    onMouseEnter={e=>e.currentTarget.style.background=T.border+"40"}
+                    onMouseLeave={e=>e.currentTarget.style.background="transparent"}
+                  >
+                    <td style={{padding:"13px 14px",fontWeight:600}}>{r.coder}</td>
+                    <td style={{padding:"13px 14px",color:T.accent,fontWeight:600}}>{r.done}</td>
+                    <td style={{padding:"13px 14px",color:T.amber}}>{r.pend}</td>
+                    <td style={{padding:"13px 14px",color:T.muted}}>{r.turn}</td>
+                    <td style={{padding:"13px 14px"}}>{r.acc}</td>
+                    <td style={{padding:"13px 14px"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8}}>
+                        <div style={{flex:1,height:5,borderRadius:3,background:T.border}}>
+                          <div style={{height:"100%",width:`${r.prod}%`,borderRadius:3,background:r.prod>90?T.accent:r.prod>80?T.blue:T.amber}} />
+                        </div>
+                        <span style={{fontSize:12,fontWeight:600,color:T.subtle,width:34}}>{r.prod}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        </div>
+      );
+    };
+
+    // ── AUDIT ──────────────────────────────────────────────────────────────────
+    const AuditPage = () => (
+      <div style={{display:"flex",flexDirection:"column",gap:18}}>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14}}>
+          <StatCard label="Flagged Charts" value="12" icon="audit" change={undefined} color={T.red} />
+          <StatCard label="Under Review" value="5" icon="eye" change={undefined} color={T.amber} />
+          <StatCard label="Cleared" value="47" icon="audit" change={undefined} color={T.accent} />
+        </div>
+        <Card anim={false}>
+          <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Audit Log</div>
+          {[
+            {id:"CHT-1035",reason:"Incorrect DX code (M79.3 vs M79.31)",sev:"High",coder:"Ana T.",date:"Feb 19"},
+            {id:"CHT-1028",reason:"Missing modifier on CPT 99213",sev:"Medium",coder:"James R.",date:"Feb 17"},
+            {id:"CHT-1021",reason:"Duplicate billing entry detected",sev:"High",coder:"Mark W.",date:"Feb 15"},
+            {id:"CHT-1014",reason:"ICD-10 specificity insufficient",sev:"Low",coder:"Sarah M.",date:"Feb 12"},
+          ].map((a,i)=>{
+            const sc={High:{c:T.red,b:"rgba(239,68,68,0.1)"},Medium:{c:T.amber,b:"rgba(245,158,11,0.1)"},Low:{c:T.accent,b:"rgba(0,198,167,0.1)"}};
+            return (
+              <div key={a.id} style={{display:"flex",alignItems:"center",gap:14,padding:"14px 0",borderBottom:i<3?`1px solid ${T.border}`:"none",flexWrap:"wrap"}}>
+                <div style={{fontFamily:"'JetBrains Mono',monospace",fontSize:13,color:T.accent,width:75,flexShrink:0}}>{a.id}</div>
+                <div style={{flex:1,minWidth:180}}>
+                  <div style={{fontSize:14,fontWeight:500}}>{a.reason}</div>
+                  <div style={{fontSize:12,color:T.muted,marginTop:3}}>Coder: {a.coder}</div>
+                </div>
+                <span style={{padding:"3px 12px",borderRadius:20,fontSize:12,fontWeight:600,color:sc[a.sev].c,background:sc[a.sev].b}}>{a.sev}</span>
+                <div style={{fontSize:12,color:T.muted}}>{a.date}</div>
+                <div style={{display:"flex",gap:6}}>
+                  <Btn variant="secondary" size="sm">Review</Btn>
+                  <Btn variant="ghost" size="sm">Clear</Btn>
+                </div>
+              </div>
+            );
+          })}
+        </Card>
+      </div>
+    );
+
+    // ── USERS ──────────────────────────────────────────────────────────────────
+    const UsersPage = () => {
+      const [users, setUsers] = useState(initUsers);
+      const [modal, setModal] = useState(false);
+      const [nu, setNu] = useState({name:"",email:"",role:"Coder"});
+      const addUser = () => {
+        if(!nu.name||!nu.email) return;
+        setUsers([...users,{id:Date.now(),...nu,status:"Active",charts:0,accuracy:"—"}]);
+        setNu({name:"",email:"",role:"Coder"});
+        setModal(false);
+      };
+      return (
+        <div style={{display:"flex",flexDirection:"column",gap:16}}>
+          <div style={{display:"flex",justifyContent:"flex-end"}}>
+            <Btn onClick={()=>setModal(true)}><Ico n="plus" size={15} color="#000" /> Add User</Btn>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(290px,1fr))",gap:14}}>
+            {users.map((u,i)=>(
+              <Card key={u.id} style={{animationDelay:`${i*0.05}s`}}>
+                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:14}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10}}>
+                    <div style={{width:42,height:42,borderRadius:13,background:T.accentDim,border:`1px solid ${T.accentGlow}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:700,color:T.accent}}>
+                      {u.name.split(" ").map(n=>n[0]).join("").slice(0,2)}
+                    </div>
+                    <div>
+                      <div style={{fontWeight:700,fontSize:14}}>{u.name}</div>
+                      <div style={{fontSize:12,color:T.muted}}>{u.email}</div>
+                    </div>
+                  </div>
+                  <Badge status={u.status} />
+                </div>
+                <div style={{display:"flex",justifyContent:"space-around",padding:"11px 0",borderTop:`1px solid ${T.border}`,borderBottom:`1px solid ${T.border}`,marginBottom:12}}>
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:17,fontWeight:700}}>{u.charts}</div>
+                    <div style={{fontSize:11,color:T.muted}}>Charts</div>
+                  </div>
+                  <div style={{textAlign:"center"}}>
+                    <div style={{fontSize:17,fontWeight:700}}>{u.accuracy}</div>
+                    <div style={{fontSize:11,color:T.muted}}>Accuracy</div>
+                  </div>
+                  <div style={{textAlign:"center"}}>
+                    <Badge status={u.role} />
+                    <div style={{fontSize:11,color:T.muted,marginTop:3}}>Role</div>
+                  </div>
+                </div>
+                <div style={{display:"flex",gap:7}}>
+                  <Btn variant="secondary" size="sm" style={{flex:1,justifyContent:"center"}}>Edit</Btn>
+                  <Btn variant="danger" size="sm" style={{flex:1,justifyContent:"center"}} onClick={()=>setUsers(users.filter(x=>x.id!==u.id))}>Remove</Btn>
+                </div>
+              </Card>
+            ))}
+          </div>
+          {modal && (
+            <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:200}} onClick={e=>{if(e.target===e.currentTarget)setModal(false);}}>
+              <div className="fade-in" style={{background:T.card,border:`1px solid ${T.border}`,borderRadius:20,padding:28,width:390}}>
+                <div style={{fontSize:18,fontWeight:700,marginBottom:18}}>Add New User</div>
+                <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  <Input label="Full Name" value={nu.name} onChange={e=>setNu({...nu,name:e.target.value})} placeholder="Jane Doe" />
+                  <Input label="Email" type="email" value={nu.email} onChange={e=>setNu({...nu,email:e.target.value})} placeholder="jane@medtrack.io" />
+                  <div>
+                    <label style={{fontSize:13,color:T.subtle,fontWeight:500,display:"block",marginBottom:6}}>Role</label>
+                    <select value={nu.role} onChange={e=>setNu({...nu,role:e.target.value})} style={{width:"100%",background:T.surface,border:`1px solid ${T.border}`,borderRadius:10,padding:"10px 14px",color:T.text,fontSize:14,outline:"none"}}>
+                      <option>Admin</option><option>Coder</option>
+                    </select>
+                  </div>
+                  <div style={{display:"flex",gap:8,marginTop:6}}>
+                    <Btn onClick={()=>setModal(false)} variant="ghost" style={{flex:1,justifyContent:"center"}}>Cancel</Btn>
+                    <Btn onClick={addUser} style={{flex:1,justifyContent:"center"}}>Add User</Btn>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    // ── SETTINGS ───────────────────────────────────────────────────────────────
+    const SettingsPage = () => {
+      const [co, setCo] = useState({name:"MedTrack Health Systems",email:"admin@medtrack.io",phone:"+1 (555) 012-3456",address:"123 Healthcare Blvd, Boston, MA 02101",npi:"1234567890"});
+      const [pw, setPw] = useState({cur:"",nw:"",cf:""});
+      const [saved, setSaved] = useState(false);
+      const [notif, setNotif] = useState([true,true,false]);
+      const save = () => { setSaved(true); setTimeout(()=>setSaved(false),2500); };
+      return (
+        <div style={{display:"flex",flexDirection:"column",gap:18,maxWidth:680}}>
+          <Card>
+            <div style={{fontSize:16,fontWeight:700,marginBottom:4}}>Company Information</div>
+            <div style={{fontSize:13,color:T.muted,marginBottom:20}}>Update your organization details.</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              <Input label="Company Name" value={co.name} onChange={e=>setCo({...co,name:e.target.value})} style={{gridColumn:"1 / -1"}} />
+              <Input label="Admin Email" value={co.email} onChange={e=>setCo({...co,email:e.target.value})} />
+              <Input label="Phone Number" value={co.phone} onChange={e=>setCo({...co,phone:e.target.value})} />
+              <Input label="NPI Number" value={co.npi} onChange={e=>setCo({...co,npi:e.target.value})} />
+              <Input label="Address" value={co.address} onChange={e=>setCo({...co,address:e.target.value})} />
+            </div>
+            <div style={{marginTop:16,display:"flex",gap:10,alignItems:"center"}}>
+              <Btn onClick={save}>Save Changes</Btn>
+              {saved && <span style={{fontSize:13,color:T.accent}}>✓ Saved successfully</span>}
+            </div>
+          </Card>
+          <Card>
+            <div style={{fontSize:16,fontWeight:700,marginBottom:4}}>Change Password</div>
+            <div style={{fontSize:13,color:T.muted,marginBottom:20}}>Secure your account with a strong password.</div>
+            <div style={{display:"flex",flexDirection:"column",gap:12}}>
+              <Input label="Current Password" type="password" value={pw.cur} onChange={e=>setPw({...pw,cur:e.target.value})} placeholder="••••••••" />
+              <Input label="New Password" type="password" value={pw.nw} onChange={e=>setPw({...pw,nw:e.target.value})} placeholder="••••••••" />
+              <Input label="Confirm New Password" type="password" value={pw.cf} onChange={e=>setPw({...pw,cf:e.target.value})} placeholder="••••••••" />
+              {pw.nw && pw.cf && pw.nw!==pw.cf && <div style={{fontSize:12,color:T.red}}>Passwords do not match.</div>}
+              <div><Btn onClick={save}>Update Password</Btn></div>
+            </div>
+          </Card>
+          <Card>
+            <div style={{fontSize:16,fontWeight:700,marginBottom:14}}>Notifications</div>
+            {[
+              {l:"Email alerts for flagged charts",s:"Get notified when a chart is flagged"},
+              {l:"Daily summary report",s:"Daily digest of coding activity"},
+              {l:"Productivity alerts",s:"Alert when productivity drops below threshold"},
+            ].map((n,i)=>(
+              <div key={n.l} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"13px 0",borderBottom:i<2?`1px solid ${T.border}`:"none"}}>
+                <div>
+                  <div style={{fontSize:14,fontWeight:500}}>{n.l}</div>
+                  <div style={{fontSize:12,color:T.muted,marginTop:2}}>{n.s}</div>
+                </div>
+                <div onClick={()=>{const a=[...notif];a[i]=!a[i];setNotif(a);}}
+                  style={{width:44,height:24,borderRadius:12,background:notif[i]?T.accent:T.border,cursor:"pointer",position:"relative",transition:"background 0.2s",flexShrink:0}}>
+                  <div style={{position:"absolute",top:3,left:notif[i]?"calc(100% - 21px)":3,width:18,height:18,borderRadius:"50%",background:"#fff",transition:"left 0.2s"}} />
+                </div>
+              </div>
+            ))}
+          </Card>
+        </div>
+      );
+    };
+
+    // ── MAIN APP ───────────────────────────────────────────────────────────────
+    const pageMeta = {
+      dashboard:{title:"Dashboard",sub:"Welcome back, David"},
+      charts:{title:"Charts",sub:"Manage and track coding charts"},
+      projects:{title:"Projects",sub:"All active coding projects"},
+      reports:{title:"Reports",sub:"Analytics and performance"},
+      audit:{title:"Audit",sub:"Quality assurance & compliance"},
+      users:{title:"Users",sub:"Manage coders and admins"},
+      settings:{title:"Settings",sub:"Company & account configuration"},
+    };
+    const pages = {dashboard:Dashboard,charts:ChartsPage,projects:ProjectsPage,reports:ReportsPage,audit:AuditPage,users:UsersPage,settings:SettingsPage};
+
+    function App() {
+      const [user, setUser] = useState(null);
+      const [page, setPage] = useState("dashboard");
+      const [collapsed, setCollapsed] = useState(false);
+      const sw = collapsed ? 70 : 240;
+      const Page = pages[page];
+
+      if (!user) return <LoginPage onLogin={setUser} />;
+
+      return (
+        <div style={{display:"flex",minHeight:"100vh"}}>
+          <Sidebar active={page} onNav={setPage} user={user} onLogout={()=>setUser(null)} collapsed={collapsed} />
+          <div style={{flex:1,marginLeft:sw,transition:"margin-left 0.3s",minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+            <TopBar title={pageMeta[page].title} subtitle={pageMeta[page].sub} sw={sw} onToggle={()=>setCollapsed(!collapsed)} />
+            <main style={{flex:1,padding:"80px 22px 30px"}}>
+              <Page />
+            </main>
+          </div>
+        </div>
+      );
+    }
+
     const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(React.createElement(MedTrackAI));
+    root.render(<App />);
   </script>
 </body>
 </html>
